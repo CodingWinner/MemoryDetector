@@ -56,7 +56,6 @@ int main(int argc, char *argv[]) {
     // Variable setup
     long numVars = 1;
     char **vars = malloc(sizeof(char *) * numVars);
-    char *freed = malloc(sizeof(char) * numVars);
     int pos = 0;
 
     // Loop through the file
@@ -81,13 +80,11 @@ int main(int argc, char *argv[]) {
         int varIdx = numVars;
         numVars++;
         vars = realloc(vars, sizeof(char *) * numVars);
-        freed = realloc(freed, numVars);
         vars[varIdx] = malloc(varLen + 1);
         vars[varIdx][varLen] = '\0';
 
         // Copy the variable name and set it to unfreed
         memcpy(vars[varIdx], data + startPos + 1, varLen);
-        freed[varIdx] = 0;
       }
 
       // Check if there is a call to free
@@ -110,12 +107,14 @@ int main(int argc, char *argv[]) {
 
         // Check if it matches existing variable names
         for (int i = 1; i < numVars; i++) {
-          // If variable is the same as the one freed, set it to freed
-          if (freed[i]) {
+          // If variable is already freed, do nothing
+          if (vars[i] == NULL) {
             continue;
           }
-          if (strcmp(freedVar, vars[i]) == 0) {
-            freed[i] = 1;
+          // If the variable matches, free it and set it to null
+          else if (strcmp(freedVar, vars[i]) == 0) {
+            free(vars[i]);
+            vars[i] = NULL;
             break;
           }
         }
@@ -127,13 +126,12 @@ int main(int argc, char *argv[]) {
     free(data);
 
     for (long var = 1; var < numVars; var++) {
-      if (!freed[var]) {
+      if (vars[var] != NULL) {
         printf("Variable not freed: %s\n", vars[var]);
+        free(vars[var]);
       }
-      free(vars[var]);
     }
     free(vars);
-    free(freed);
 
     return 0;
   }
